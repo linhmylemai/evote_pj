@@ -1,0 +1,16 @@
+# Các thư viện cần cho server
+fastapi
+uvicorn
+
+# ORM + SQLite
+sqlmodel
+aiosqlite
+
+# Mã hóa
+cryptography
+bcrypt
+
+# Tiện ích
+pydantic
+python-dotenv
+pandas
