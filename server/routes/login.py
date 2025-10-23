@@ -1,17 +1,20 @@
-# server/routes/login.py (Đã sửa lỗi logic HASHING)
+# server/routes/login.py (CODE HOÀN CHỈNH)
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from sqlmodel import Session, select
 from typing import Optional
 
-# KHÔNG CẦN import hash_password nữa
-from server.models.db import Account, Voter, engine
-from server.services.tokens import generate_ballot_token
-# ✅ Import check_password
+# Import Models và Engine
+from server.models.db import Account,Voter, engine 
+# Import hàm kiểm tra mật khẩu
 from common.crypto import check_password 
+# Import hàm sinh token mới
+from server.services.tokens import generate_ballot_token #  SỬ DỤNG HÀM CỦA BẠN
 
 router = APIRouter()
+
+# --- 1. Models cho Request và Response ---
 
 class LoginRequest(BaseModel):
     name_login: str
@@ -22,43 +25,60 @@ class LoginResponse(BaseModel):
     ballot_token: str
     message: str
 
-
+# --- 2. Endpoint Đăng nhập ---
 @router.post("/login", response_model=LoginResponse)
-def login_user(user_credentials: LoginRequest):
+def login_for_ballot_token(login_data: LoginRequest):
     """
-    Endpoint xác thực người dùng. Nếu thành công, sinh Ballot Token.
+    Xác thực cử tri và sinh Ballot Token (lưu vào DB)
     """
     
     with Session(engine) as session:
-        # 1. Tìm tài khoản bằng Tên đăng nhập
-        statement = select(Account).where(
-            Account.name_login == user_credentials.name_login
+        # 1. Tìm TÀI KHOẢN VÀ CỬ TRI liên kết
+        # Join Account và Voter để lấy thông tin trong một truy vấn
+        statement = select(Account, Voter).join(Voter).where(
+            Account.name_login == login_data.name_login
         )
-        account = session.exec(statement).first()
+        result = session.exec(statement).first()
 
-        if not account:
-            # Sửa thông báo để tránh leak thông tin: chỉ báo lỗi chung
-            raise HTTPException(status_code=401, detail="Tên đăng nhập hoặc Mật khẩu không chính xác.")
+        if not result:
+            raise HTTPException(
+                status_code=401, 
+                detail="Tên đăng nhập hoặc mật khẩu không đúng."
+            )
         
-        # 2. ✅ SO SÁNH MẬT KHẨU BẰNG HÀM check_password (CÁCH CHÍNH XÁC)
-        # account.password_hash là string, cần chuyển về bytes để bcrypt làm việc
-        stored_hash_bytes = account.password_hash.encode('utf-8')
+        # Lấy ra các đối tượng
+        account, voter = result
+
+        # 2. Kiểm tra mật khẩu
+        # Dùng `account.password_hash.encode('utf-8')` để chuyển string trong DB thành bytes
+        is_correct = check_password(
+            login_data.password, 
+            account.password_hash.encode('utf-8')
+        )
         
-        if not check_password(user_credentials.password, stored_hash_bytes):
-            raise HTTPException(status_code=401, detail="Tên đăng nhập hoặc Mật khẩu không chính xác.")
-        
+        if not is_correct:
+            raise HTTPException(
+                status_code=401, 
+                detail="Tên đăng nhập hoặc mật khẩu không đúng."
+            )
+
+        # 3. Kiểm tra trạng thái bỏ phiếu
         if account.has_voted:
-            raise HTTPException(status_code=403, detail="Cử tri này đã bỏ phiếu.")
+             raise HTTPException(
+                status_code=403, 
+                detail="Cử tri này đã hoàn thành việc bỏ phiếu."
+            )
 
-        # 3. Xác thực thành công -> Sinh Ballot Token
-        ballot_token = generate_ballot_token(account.voter_id)
-        
-        # 4. Lấy tên cử tri để trả về
-        voter = session.get(Voter, account.voter_id)
-        voter_name = voter.name if voter else "Không rõ tên"
-        
+        # 4. Sinh và Lưu Token mới
+        # Token vẫn dùng voter_id để liên kết
+        token = generate_ballot_token(account.voter_id)
+
+        if not token:
+             raise HTTPException(status_code=500, detail="Lỗi server: Không thể tạo token.")
+             
+        # 5. Trả về tên cử tri (Voter.name)
         return LoginResponse(
-            voter_name=voter_name,
-            ballot_token=ballot_token,
-            message="Đăng nhập thành công. Đã nhận mã thông hành (Ballot Token)."
+            voter_name=voter.name, #  ĐÃ SỬA: Dùng tên từ đối tượng Voter
+            ballot_token=token,
+            message="Đăng nhập thành công. Token đã sẵn sàng để bỏ phiếu."
         )
