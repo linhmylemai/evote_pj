@@ -1,20 +1,19 @@
-# common/crypto.py
+# common/crypto.py (Đã làm sạch và thêm hàm load)
 
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 import bcrypt
 import os
 
-# --- 1. Tạo Khóa (Admin Tool sẽ dùng) ---
+# --- 1. Quản lý Khóa RSA ---
 
-def generate_rsa_keys():
+def generate_rsa_keys(key_size: int = 3072):
     """Tạo cặp khóa RSA (Public & Private)"""
     private_key = rsa.generate_private_key(
         public_exponent=65537,
-        key_size=2048,
+        key_size=key_size,
     )
     public_key = private_key.public_key()
     return private_key, public_key
@@ -38,20 +37,22 @@ def save_public_key(key, path):
     with open(path, "wb") as f:
         f.write(pem)
 
-# Tạo khóa riêng → lấy khóa công khai
-private_key = rsa.generate_private_key(
-    public_exponent=65537,
-    key_size=3072
-)
-public_key = private_key.public_key()
+def load_private_key(path: str) -> rsa.RSAPrivateKey:
+    """Tải Khóa Riêng tư từ file."""
+    with open(path, "rb") as f:
+        private_key = serialization.load_pem_private_key(
+            f.read(),
+            password=None
+        )
+    return private_key
 
-# Đường dẫn mới
-public_path = r"D:\AT&BM HTTT\Project_eVote\server\keys\admin_public_key.pem"
-private_path = r"D:\AT&BM HTTT\Project_eVote\admin\keys\admin_private_key.pem"
-
-# Gọi hàm lưu
-save_public_key(public_key, public_path)
-save_private_key(private_key, private_path)
+def load_public_key(path: str) -> rsa.RSAPublicKey:
+    """Tải Khóa Công khai từ file."""
+    with open(path, "rb") as f:
+        public_key = serialization.load_pem_public_key(
+            f.read()
+        )
+    return public_key
 
 # --- 2. Mã hóa (Client sẽ dùng) ---
 
@@ -59,13 +60,8 @@ def generate_aes_key():
     """Tạo Khóa AES 256-bit ngẫu nhiên và IV 96-bit cho AES-GCM"""
     return os.urandom(32), os.urandom(12)
 
-def aes_gcm_encrypt(key: bytes, iv: bytes, plaintext: bytes) -> bytes:
-    """Mã hóa nội dung phiếu bầu bằng AES-GCM (Giữ nguyên)"""
-    aesgcm = AESGCM(key)
-    ciphertext_with_tag = aesgcm.encrypt(iv, plaintext, None)
-    return ciphertext_with_tag
-
 def rsa_encrypt(public_key: rsa.RSAPublicKey, data: bytes) -> bytes:
+    """Bọc (Encrypt) data (thường là AES key) bằng RSA Public Key (PKCS1v15)"""
     ciphertext = public_key.encrypt(
         data,
         padding.PKCS1v15() 
@@ -75,6 +71,7 @@ def rsa_encrypt(public_key: rsa.RSAPublicKey, data: bytes) -> bytes:
 # --- 3. Giải mã (Admin Tool sẽ dùng) ---
 
 def rsa_decrypt(private_key: rsa.RSAPrivateKey, ciphertext: bytes) -> bytes:
+    """Giải mã data (thường là AES key) bằng RSA Private Key (PKCS1v15)"""
     plaintext = private_key.decrypt(
         ciphertext,
         padding.PKCS1v15()
@@ -82,9 +79,9 @@ def rsa_decrypt(private_key: rsa.RSAPrivateKey, ciphertext: bytes) -> bytes:
     return plaintext
 
 def aes_gcm_decrypt(key: bytes, iv: bytes, ciphertext_with_tag: bytes) -> bytes:
-    """Giải mã nội dung phiếu bầu bằng AES-GCM (Giữ nguyên)"""
+    """Giải mã nội dung phiếu bầu bằng AES-GCM"""
     aesgcm = AESGCM(key)
-    plaintext = aesgcm.decrypt(iv, ciphertext_with_tag, None)
+    plaintext = aesgcm.decrypt(iv, ciphertext_with_tag, ciphertext_with_tag) # AESGCM.decrypt không cần tag riêng
     return plaintext
 
 # --- 4. Xác thực Mật khẩu ---

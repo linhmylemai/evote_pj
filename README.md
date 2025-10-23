@@ -34,6 +34,12 @@ Public key: Client dùng để mã hóa khóa AES trước khi gửi phiếu.
     admin_public_key.pem → server phát cho client để mã hóa khóa AES.
 )
 
+2. Đọc data_input
 
+
+3. tạo routes
+login.py	Xác thực người dùng (login) và sinh mã thông hành (ballot token).
+ballot.py	ballot.py	Trả về thông tin ứng viên và khóa công khai.
+cast.py	cast.py	Nhận và lưu phiếu bầu đã mã hóa.
 
 

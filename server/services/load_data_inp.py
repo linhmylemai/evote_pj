@@ -78,8 +78,9 @@ def initialize_and_load_data():
             for index, row in df_voters.iterrows():
                 # Tên cột đã được xác nhận chính xác
                 voter = Voter(
+                    # ✅ SỬA TÊN CỘT ĐỂ KHỚP VỚI HÌNH ẢNH:
                     cccd=str(row['CCCD']), 
-                    name=row['Họ và tên'],
+                    name=row['Họ và tên'].strip(), # Thêm .strip() để loại bỏ khoảng trắng thừa
                     date_of_birth=parse_date(row['Ngày sinh']),
                     email=row['Email'],
                     phone_number=row['SĐT'],
@@ -91,15 +92,15 @@ def initialize_and_load_data():
 
             # Tải Tài khoản sau khi đã có Voter ID
             for index, row in df_accounts.iterrows():
-                voter_db_id = voter_map.get(row['Liên kết ID']) # Sử dụng Mã cử tri
+                voter_db_id = voter_map.get(row['Liên kết ID']) # Giả sử 'Liên kết ID' là đúng
                 if voter_db_id is not None:
                     # Hash mật khẩu
-                    hashed_pw = hash_password(str(row['Mật khẩu']))
+                    hashed_pw = hash_password(str(row['Mật khẩu'])) # Giả sử 'Mật khẩu' là đúng
 
                     account = Account(
-                        name_login=row['Tên đăng nhập'], 
+                        name_login=row['Tên đăng nhập'], # Giả sử 'Tên đăng nhập' là đúng
                         password_hash=hashed_pw.decode('utf-8'),
-                        role=row['Vai trò'],
+                        role=row['Vai trò'], # Giả sử 'Vai trò' là đúng
                         voter_id=voter_db_id,
                         has_voted=False 
                     )
