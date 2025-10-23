@@ -70,12 +70,12 @@ def get_ballot_info(election_id: int): # ✅ Thêm tham số ID
 
         # 4. Trả về Response
         response_data = BallotInfoResponse(
-            id=election.id,
-            name=election.name,
-            start_time=election.start_time,
-            end_time=election.end_time,
-            candidates_info=candidates_list,
-            admin_public_key=public_key_pem,
-            message="Thông tin bầu cử và Khóa Công khai đã sẵn sàng."
-        )
+                id=election.id,
+                name=election.name,
+                start_time=election.start_time,
+                end_time=election.end_time,
+                candidates_info=candidates_list,
+                admin_public_key=public_key_pem,
+                message="Thông tin bầu cử và Khóa Công khai đã sẵn sàng."
+            )
         return response_data
