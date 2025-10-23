@@ -43,3 +43,9 @@ ballot.py	ballot.py	Trả về thông tin ứng viên và khóa công khai.
 cast.py	cast.py	Nhận và lưu phiếu bầu đã mã hóa.
 
 
+
+
+------------------------Client--------------------
+/api/login	POST	Đăng nhập	name_login, password	ballot_token, voter_name
+/api/ballot/{id}	GET	Lấy thông tin bầu cử	(Không)	candidates_info, admin_public_key (chuỗi PEM)
+/api/cast	POST	Bỏ phiếu	ballot_token, enc_key, cipher_vote, iv	receipt_id
