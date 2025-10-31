@@ -26,5 +26,47 @@
     "iv": "jLQHtQdRh99SfY5W",
     "aes_key": "AyqR7Af/9JHz4sqStTbZiXhFKrykShe9uk3OfSyiEuaIH+DOyziNREL65BqDy1QCpkIEiO+8pm145EIBPAXQtJ7+WBJ/AJZynniKWXJ2iCrZTnX6PmTMZBcRlZ93WFYbLPE0keXQz07jy1aqJV6NuaQ2v2K6PSyzR6aCX+vLlOiLojmgNbGPMnflMou5S+eNGjWnpyd7OqYeS469/qrEVUl1nNBJMLKjCXq9lqMciJfAl8GkRRYbjzZ0eI15ZOj4KcLOdaTkyeVavw6a4gocJj+cEhNhr3Eh+rxIVkvQ4vm/D7qUB0qpwFMKy46/CJSW0S/5BSAV0a4NjrWOOmLd0g==",
     "encrypted_vote": "BNdsjfQ9IvPgAeg/xR2cgTa0FTveV4VVyx9Bb7R1mYQ8ZyfY6lIyarC6iGmC46STKR4EztjmkLliNQffmR/pTZSWkCLOkOyM+dPH5nV+VB8="
+  },
+  {
+    "voter": "user001",
+    "candidate": "Bùi Thanh Linh",
+    "iv": "BFJDjVdiHRLL0ZsA",
+    "aes_key": "OiVLwxdwOtqXUWDEeoWObWdEG9cyfPhoBqmBtFqDf+FegAaPRMR9lIu1Zr9e2XPmkULSzdNN6Hb6tZXpS/EDkOz8oxId8WWhl4qz9ZYV37Rt8TJdNNz/mgOD+UDolXh8HNU9Y8j7MVM7lcSZD5Fnwey4jRj7fwTQzyrRbMOnJGSR6puAJelHVqPKB8+i2wyAt9MbyFa/5C8Ju3xCzHDuK51M+sK6WR9UO33HE0od3fz0RJivjXBuUH8WpLpsL/6EP2MQeLlwhhenNj/XGi2TXwt2JTqlNGAZqnclEKauKwJxpchRbujzk9kRPGgLN08DLT/zX+2zb2Ohzv3BVEW5fQ==",
+    "encrypted_vote": "IzkVg7Vxzrc2ZyUVD4prqv3/Ldv+yYQGdlBcOEkmRig9P9PnocD97UKylgcVgShZclhj2u3aTtGvew+yNKj4iQ39mWgHDFrr"
+  },
+  {
+    "voter": "user001",
+    "candidate": "Hoàng Quốc Vy",
+    "iv": "GA4u5x1OTF9K5plt",
+    "aes_key": "YFOA2DRgrKVMyOikykn7nqIDfLvWKWcqSPHJptSIZzAUBWsBS7cKuy3qGeAHj3SgycbhTHdCKlCOQwvs+0H2nji/jSs4H4g66tAQvc4RPJC7ln2gqbt/kiRGVA6r6W9oX64c60RAwmrb3XqViMHxlt5NQ7mr0bJ5K3UWGdmvSxY8dfzC96KRoXTDXb1ICZsYtB7MwHwD18d+Wnscwwnd27ZeUFP8J2puEH4qnBx+s1GUS+wCRvyfFnWQTlqdq3DbhVzC821+So3YsfyFLn/1dzeGJLBH6ehKyy3NLKPCJVM+TKLEwaEasVM/2ywlyIY7yWPoBIhQlpNPTrRlLd0V5Q==",
+    "encrypted_vote": "fyYh1DYaF6f9PzMb0PFjadDS4rF/m/3gphblHbmeHIU5Oibkxqzh20yevSIv41OEg8tPNH8p+mfT0K9FZEPgm5sj2m1nlQlxI8YHtg=="
+  },
+  {
+    "voter": "user001",
+    "candidate": "Phan Thanh Khánh",
+    "iv": "I92W+tEizQIssFtf",
+    "aes_key": "aNk2Vq4Y5hW/lg6cD6idOLaDc9eLHBCfj5U/OvfkaGO9GfVeSeYIU+L9HWdLK0nr8S/748aj68Qmwt7H8MTC2a3aBxKv6fSknca8viPcPsV8+H8QjepBibgZkW9AHhyRXHjmm1Agc5CSQ4a0KzNIFiD4uALfrHhvxfmwihBhJhxD2F51RS3fZtuU6zxfppPYxh2lnjFNWTDXInYDI+EtOZTsbB/zpsmqMQpYmqIaeQyKCTt4bE75dT+MYQNeydqm7Z21YWOugofSdvhubfvkxKeNgVuezrXCLMLhDYfcs6L61bnbhCL8WT89+sYDuhhTqFXEBVvOKEaHFtLxFd9RsA==",
+    "encrypted_vote": "Q5tymBkb466R0sQlLuHSSkWseGa8EQ3gVzzRCETRjwx8WfiRp1xXeguOuDhjfjHVX2RJU/25pTvIlMudhG0zB/GonSgKyd1NCeQ="
+  },
+  {
+    "voter": "user001",
+    "candidate": "Phạm Thanh Châu",
+    "iv": "wqql0pJo/qQ2jDSZ",
+    "aes_key": "ZKy2M/LsdP7DzGPMvcOZC7++0hoNc0BC7QJtvzozPuTaUPMGO3WxBQiCynU4R4FmHZkasE7Z7r4HNAgRPl/w0Pn+0MGdIGbwNgxjdd9zqrYP4g7meHoyfKBeo53rMZrnkq/wm0efVNwkH4muOjAuBN9YQXs1uSLnz22jhEnhT1lA/KboA72o4lloIS3wXKHDL5dm2r9IBiw1u+9LLk/nQJJMCQ3kX0mYM+LuUSKLn+MbvVdfcsGq2fogZxy5MhlvhdryL+gh/J0KaMle1PkKMhYxpwDZwMdP9DpyHN2TO/blzpPAHRpMLtpHG2vNdwxtt24o2pIHhu8tCjFJqpXTYw==",
+    "encrypted_vote": "L7KbOcz2tU80feR2kP1U1aKRsPqeul+4aEsdmn46jPGW3oy4zYqvrdP5wrjJNyFsXbeHBgPsHIzWc0zE2o1pW0Xo99ckR7AYiFN4UCA8"
+  },
+  {
+    "voter": "user001",
+    "candidate": "Hoàng Quốc Vy",
+    "iv": "HESNlCb9/19E97y8",
+    "aes_key": "JNfPkIHPadJQhxhBqAXAGNgA2Ep0rsgEvNOXVI5awFe9dzW1dig+4I3shi/RHxs8uFm65oDTmKJ1wZ2ugV/bztIQqbVfj+qle5gTSBfLnRm339DVH9kZIVXNb0R2lrT36XXSzpii5VV3wX1vl4BbIPF+ubJJdVlCTUVL10W0rddtrEhhcfaMv48ekmanQxkRemsO0j1OckBTPznPKTp3Q74gHvcaBGLV/4DB4UH2woixEI5PHSM974OHnIASytkGjCeZjf8RknHh3pfs5RwNw5/SLoCFgiXqMjG5nu+S03JKHMP2nHkHScUt4DZX6bdIGIlluhn6N5kA2lvl1K27Cw==",
+    "encrypted_vote": "/KUt3DasaRItwnZbJDZPpJq0uGo9ExUfaCsngrmGVoBW6I3fYIWPH09Nwzwgk8JTS0M6dktWNP4IZq5D3+z2FjAhlCAeP43TlzKRkg=="
+  },
+  {
+    "voter": "user001",
+    "candidate": "Vũ Quốc Khánh",
+    "iv": "aEhZGWaKI/l1ewN5",
+    "aes_key": "El1zrNyZYqfJWIKOz6BnCrlLuYXIRlGaEoFmDgCGtGxc6YHWi95oag/sAqYmm2Wfq9QpjrLADp+Xniy+2wxTnCg86M1v0ymw4gg3M1F4Xi3oJ2t75K9U2dMCxp2sPfqHD6lJBzRnz1DBLit+KpNFTTf1ooX5e5WzS6PMeSfs7l6FbxlbxdZ4yMtlocA8BXXNbLECtUl1CGe2Pf89ILUqHa0Ms3ryh3ZC/VOoUApSqKnxxDYPxhHmuDU7WIBUREHFWdvhz0XIfUtELrv3WUnRfWX3iEgfOSxuzReYKbg7pEfnotEkBYzpv9aWYB+OvQdqsawMbTklt2N97I1CFtBYzA==",
+    "encrypted_vote": "zUn8+J/54qPun+hqaFWdPy5ognerEX5dlDaXhOspXRydJZ2lPuNZC2y5EZ71vW7/bfgi3+9O05oWMIVBpMs/zyODCXEcAnH9j+aCO4J8xx6T"
   }
 ]
