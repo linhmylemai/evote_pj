@@ -1,0 +1,30 @@
+[
+  {
+    "voter": "user001",
+    "candidate": "Vũ Quốc Khánh",
+    "iv": "sdpszMaUje4eWx9A",
+    "aes_key": "ZFx7JYPKq9lR31Im57urbgP1kenjnpG1133dcUclDE9lcKPOnOm1/GaqBSUI+Q/80JG4qGT6egeMm8uBvHIsAPE51a56yRG7BaHINd/BO4xA7ga8QOIoBVHv/E7MyeQ86J1dwRDwmW55nvIRye7nngmRMdTCymY1ZyFY1lrIvI/ZqeRApa78Y2X96fjiv3Bq8GbAVl/8feGeqggS7o7KyguMbxmf22pwVnMLDx5ZfTbagiZgiFFkrcNf2ag1GRbGjjzOokBT7NXJZSTG7iD8kXrtWH0kweOiEqPJf1xXq1rRIcPvwaQSf1bEkPax5nEHcD4oWXfmwalD7uYyukZ1qw==",
+    "encrypted_vote": "dnCRww+NRrA+4kbkHDos0tKzsuhcGjFVSTKGDUFQrKxV9+5N44LbccQRhPLSHiHiB7I2dDyorD9pjV+B3bvDC2vU8EjROAp+no2Vif/73JlJ"
+  },
+  {
+    "voter": "user001",
+    "candidate": "Trương Văn Khánh",
+    "iv": "0jpDz2yt9ZuhLQmM",
+    "aes_key": "L0qUOu06NhnlkAMsAHJ54bv7dW02Ilcq71GaiBLo/bPbBMojyb17mdYluQGO1zEEVuQzVe7hKdu46sZ9vslpFPHj49Fsau0/zpY4voQ0H4vOF8Ii6ZuNCvvkWi6RWgak3MNMK2bRVlyLzKOZX9yFQy3S4lHp8AGHY8pi+pDHve6g5h8lXVei3akWTxWYAm3c2eLQVJq6DMWVDBF6NOrpLua4jlyo7maIar236escbt8/PNpOV/xM6diQKby4TrAwjh/CqFXxGtXIOKT+CXXhBwwBZ5aBv12rCAvSDwDQjCCVsER9CLtQgRY3cu2IViqOHD41oHmP/LxZN8wclue+TQ==",
+    "encrypted_vote": "J/w5X7EUAOMwrtg4CLqwQGk7aUIrQDyE9op0YLZHCiqnPQ3wfLpFm0iQJ6sAl/mCpEMrQdPcEmScIo2JWCOu0sa1aRpcMjJITJvcyVIRDe/P6YvatpNZv+c="
+  },
+  {
+    "voter": "user001",
+    "candidate": "Huỳnh Anh Bình",
+    "iv": "x7RGCSC12wWe/z0h",
+    "aes_key": "Bh3WfeMRjcf9942Cy9CRi7ynVq4ATRKKlsBZwAHJUPD3zSg+5BDjj7kk4YJ8uv4gxbGZOCyRQlwpiYTb3Ocf6GwAAc6KzCCZXSuDJVgyt1Xs5L/orhfpeJHfLl4qHxbqkrf9Hfa3EgZVK9SJxuQc63eQ/fKgAcFAwzBLqgujsoLrn0MDP6eNY8U5SPGJK+NR6QguueW++aC2AwwsATTiZXVitjEsxekXJmM7hIKDUYR4yax0osOHxqLWywkzIy0mqwmDIgUq63scuuHr3Ij9ywvPmY3kU8o+PXMuOdrFv+VvJUBsecopUTXUPvKCoXSqAV1YKtGlTmFjfOSQfvZRcA==",
+    "encrypted_vote": "wBhslPMaADj5HMWbmcTrS345mr9FPEPqDOmEul/TTD2vpFbNKmg7Yd+P0QE5aaTzvI9YCTzARZfklYnXEAnWTlupsrKVW6hjLXursOk="
+  },
+  {
+    "voter": "user001",
+    "candidate": "Đặng Ngọc Uy",
+    "iv": "jLQHtQdRh99SfY5W",
+    "aes_key": "AyqR7Af/9JHz4sqStTbZiXhFKrykShe9uk3OfSyiEuaIH+DOyziNREL65BqDy1QCpkIEiO+8pm145EIBPAXQtJ7+WBJ/AJZynniKWXJ2iCrZTnX6PmTMZBcRlZ93WFYbLPE0keXQz07jy1aqJV6NuaQ2v2K6PSyzR6aCX+vLlOiLojmgNbGPMnflMou5S+eNGjWnpyd7OqYeS469/qrEVUl1nNBJMLKjCXq9lqMciJfAl8GkRRYbjzZ0eI15ZOj4KcLOdaTkyeVavw6a4gocJj+cEhNhr3Eh+rxIVkvQ4vm/D7qUB0qpwFMKy46/CJSW0S/5BSAV0a4NjrWOOmLd0g==",
+    "encrypted_vote": "BNdsjfQ9IvPgAeg/xR2cgTa0FTveV4VVyx9Bb7R1mYQ8ZyfY6lIyarC6iGmC46STKR4EztjmkLliNQffmR/pTZSWkCLOkOyM+dPH5nV+VB8="
+  }
+]

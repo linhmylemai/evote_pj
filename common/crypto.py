@@ -70,13 +70,22 @@ def rsa_encrypt(public_key: rsa.RSAPublicKey, data: bytes) -> bytes:
 
 # --- 3. Giải mã (Admin Tool sẽ dùng) ---
 
-def rsa_decrypt(private_key: rsa.RSAPrivateKey, ciphertext: bytes) -> bytes:
-    """Giải mã data (thường là AES key) bằng RSA Private Key (PKCS1v15)"""
-    plaintext = private_key.decrypt(
-        ciphertext,
-        padding.PKCS1v15()
+def rsa_encrypt(public_key_bytes: bytes, data: bytes):
+    """Mã hóa dữ liệu bằng RSA public key"""
+    from cryptography.hazmat.backends import default_backend
+    # Nạp key từ bytes
+    public_key = serialization.load_pem_public_key(
+        public_key_bytes, backend=default_backend()
     )
-    return plaintext
+    ciphertext = public_key.encrypt(
+        data,
+        padding.OAEP(
+            mgf=padding.MGF1(algorithm=hashes.SHA256()),
+            algorithm=hashes.SHA256(),
+            label=None
+        )
+    )
+    return ciphertext
 
 def aes_gcm_decrypt(key: bytes, iv: bytes, ciphertext_with_tag: bytes) -> bytes:
     """Giải mã nội dung phiếu bầu bằng AES-GCM"""
