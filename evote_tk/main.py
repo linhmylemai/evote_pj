@@ -1,5 +1,5 @@
 import tkinter as tk
-from voter_gui import open_voter_login
+from voter_gui import open_voter_window
 from admin_gui import open_admin_login
 
 # ======= MÀU CHỦ ĐẠO =======
@@ -18,7 +18,7 @@ def main():
     # Người bỏ phiếu
     tk.Button(
         root, text="Người bỏ phiếu (Voter)",
-        command=lambda: open_voter_login(root),
+        command=lambda: open_voter_window(root, "user001"),
         bg=BTN_VOTER, fg="white", font=("Segoe UI", 13, "bold"),
         width=25, height=2, relief="flat"
     ).pack(pady=20)

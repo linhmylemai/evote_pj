@@ -440,37 +440,95 @@ def open_voter_window(parent, voter_name):
               relief="flat", command=lambda: submit_vote(selected, voter_name)).pack(pady=25)
 
 # ======= LOGIN GIAO DIỆN =======
-def open_voter_login(parent):
-    accounts = load_accounts()
+def open_voter_window(parent, voter_name):
     win = tk.Toplevel(parent)
-    win.title("Voters Login — eVote AES+RSA")
-    win.geometry("400x400")
-    win.configure(bg=BG_LOGIN)
-    win.resizable(False, False)
+    win.title("🗳 Bỏ phiếu điện tử — eVote AES+RSA")
+    win.geometry("980x680")
+    win.configure(bg=BG_MAIN)
 
-    frame = tk.Frame(win, bg="white", relief="groove", bd=1)
-    frame.place(relx=0.5, rely=0.5, anchor="center", width=300, height=320)
+    # ===== Header =====
+    header = tk.Frame(win, bg=BG_MAIN)
+    header.pack(fill="x", pady=(20, 10))
+    tk.Label(
+        header, text="🗳 BỎ PHIẾU ĐIỆN TỬ",
+        font=("Segoe UI", 22, "bold"),
+        bg=BG_MAIN, fg="#b5651d"
+    ).pack()
+    tk.Label(
+        header, text=f"Xin chào, {voter_name}",
+        bg=BG_MAIN, fg=TXT_DARK, font=("Segoe UI", 11)
+    ).pack(pady=(4, 10))
 
-    tk.Label(frame, text="🔒", font=("Segoe UI", 28), bg="white").pack(pady=(25, 8))
-    tk.Label(frame, text="Voter Login", font=("Segoe UI", 18, "bold"), bg="white", fg=TXT_COLOR).pack(pady=(0, 20))
+    # ===== Canvas (scrollable area) =====
+    canvas = tk.Canvas(win, bg=BG_MAIN, highlightthickness=0)
+    scrollbar = tk.Scrollbar(win, orient="vertical", command=canvas.yview)
+    scroll_frame = tk.Frame(canvas, bg=BG_MAIN)
 
-    tk.Label(frame, text="Username", bg="white").pack(anchor="w", padx=40)
-    entry_user = tk.Entry(frame, font=("Segoe UI", 11), bg="#f3f4f6", relief="flat", justify="center")
-    entry_user.pack(padx=40, pady=(3, 10), fill="x")
+    scroll_frame.bind(
+        "<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+    )
+    canvas.create_window((0, 0), window=scroll_frame, anchor="nw")
+    canvas.configure(yscrollcommand=scrollbar.set)
 
-    tk.Label(frame, text="Password", bg="white").pack(anchor="w", padx=40)
-    entry_pass = tk.Entry(frame, font=("Segoe UI", 11), bg="#f3f4f6", relief="flat", show="*", justify="center")
-    entry_pass.pack(padx=40, pady=(3, 20), fill="x")
+    canvas.pack(side="left", fill="both", expand=True, padx=30)
+    scrollbar.pack(side="right", fill="y")
 
-    def handle_login():
-        user, pw = entry_user.get().strip(), entry_pass.get().strip()
-        if user in accounts and accounts[user] == pw:
-            messagebox.showinfo("Thành công", f"Xin chào {user}, bạn có thể bỏ phiếu!")
-            win.destroy()
-            open_voter_window(parent, user)
-        else:
-            messagebox.showerror("Lỗi", "Tên đăng nhập hoặc mật khẩu sai!")
+    # ===== Candidate grid =====
+    candidates = load_candidates()
+    if not candidates:
+        tk.Label(scroll_frame, text="Không có dữ liệu ứng viên", fg="red", bg=BG_MAIN).pack()
+        return
 
-    btn = tk.Button(frame, text="Log in", bg=BTN_BLUE, fg="white", font=("Segoe UI", 11, "bold"),
-                    relief="flat", command=handle_login)
-    btn.pack(pady=5)
+    selected = tk.StringVar()
+    cols = 3
+    for i, c in enumerate(candidates):
+        name = c.get("Họ và tên", "")
+        code = c.get("Mã ứng viên", "")
+
+        card = tk.Frame(
+            scroll_frame, bg=BG_CARD, bd=2, relief="groove",
+            width=250, height=120
+        )
+        card.grid(row=i // cols, column=i % cols, padx=15, pady=15, sticky="nsew")
+        scroll_frame.grid_columnconfigure(i % cols, weight=1)
+
+        # Nội dung card
+        tk.Label(card, text=name, font=("Segoe UI", 12, "bold"),
+                 bg=BG_CARD, fg=TXT_DARK).pack(pady=(15, 4))
+        tk.Label(card, text=f"ID: {code}",
+                 bg=BG_CARD, fg="#6b7280", font=("Segoe UI", 10)).pack(pady=(0, 6))
+        tk.Radiobutton(
+            card, text="Chọn ứng viên này", variable=selected, value=name,
+            bg=BG_CARD, font=("Segoe UI", 10), selectcolor=BG_CARD
+        ).pack(pady=(4, 6))
+
+    # ===== Button row (fixed at bottom) =====
+    btn_frame = tk.Frame(win, bg=BG_MAIN)
+    btn_frame.pack(fill="x", side="bottom", pady=20, padx=40)
+
+    def handle_submit():
+        if not selected.get():
+            messagebox.showwarning("Chưa chọn", "Vui lòng chọn một ứng viên trước khi gửi phiếu!")
+            return
+        ensure_keys()
+        data = {"voter": voter_name, "choice": selected.get()}
+        enc = encrypt_vote(data)
+        path = os.path.join("evote_tk", "data", "votes_encrypted.json")
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "a", encoding="utf-8") as f:
+            f.write(json.dumps(enc, ensure_ascii=False) + "\n")
+        messagebox.showinfo("Thành công", f"Phiếu của bạn cho {selected.get()} đã được ghi nhận!")
+        win.destroy()
+
+    tk.Button(
+        btn_frame, text="GỬI PHIẾU 📨",
+        bg=BTN_BLUE, fg="white", activebackground=BTN_BLUE_HOVER,
+        font=("Segoe UI", 13, "bold"), relief="flat", padx=18, pady=10,
+        command=handle_submit
+    ).pack(side="right")
+
+    tk.Button(
+        btn_frame, text="Đóng",
+        bg="#e5e7eb", fg="#111827", font=("Segoe UI", 11),
+        relief="flat", padx=14, pady=8, command=win.destroy
+    ).pack(side="right", padx=(0, 12))
