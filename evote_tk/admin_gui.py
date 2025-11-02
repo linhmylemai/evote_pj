@@ -3,6 +3,16 @@ from tkinter import ttk, messagebox
 import csv, os
 from collections import Counter
 
+from matplotlib import style
+
+# ⚙️ Ngăn Tkinter tự tạo root khi import
+_root = tk.Tk()
+_root.withdraw()
+# Cấu hình font mặc định cho toàn bộ Treeview
+style = ttk.Style()
+style.configure("Treeview", font=("Segoe UI", 10))
+style.configure("Treeview.Heading", font=("Segoe UI", 11, "bold"))
+
 # ======= STYLE =======
 BG_MAIN = "#fdf6f0"
 BG_SIDEBAR = "#3f3f46"
@@ -37,13 +47,20 @@ def load_data():
     data["votes"] = read_csv(os.path.join(DATA_DIR, "phieu_bau_sach.csv"))
     return data
 
-
-# ======= MAIN ADMIN WINDOW =======
 def open_admin_login(parent):
+    # Ẩn cửa sổ chính để tránh khung trắng
+    parent.withdraw()
+
     win = tk.Toplevel(parent)
     win.title("Trang quản trị — eVote AES+RSA")
     win.geometry("1150x720")
     win.configure(bg=BG_MAIN)
+
+    # Khi đóng cửa sổ admin → hiện lại cửa sổ chính
+    def on_close():
+        win.destroy()
+        parent.deiconify()
+    win.protocol("WM_DELETE_WINDOW", on_close)
 
     # ===== CONTENT AREA =====
     content = tk.Frame(win, bg=BG_MAIN)
@@ -53,10 +70,26 @@ def open_admin_login(parent):
     sidebar = tk.Frame(win, bg=BG_SIDEBAR, width=220)
     sidebar.pack(side="left", fill="y")
 
-    tk.Label(sidebar, text="🗳 CRCE Admin", bg=BG_SIDEBAR, fg="white",
-             font=("Segoe UI", 14, "bold")).pack(pady=(20, 10))
-    tk.Label(sidebar, text="● Online", bg=BG_SIDEBAR, fg="#22c55e").pack()
+    # ===== HEADER SIDEBAR (Admin + Thoát) =====
+    header_frame = tk.Frame(sidebar, bg=BG_SIDEBAR)
+    header_frame.pack(fill="x", pady=(15, 5))
 
+    tk.Label(header_frame, text="🗳 CRCE Admin", bg=BG_SIDEBAR, fg="white",
+             font=("Segoe UI", 14, "bold")).pack(side="left", padx=10)
+    tk.Label(header_frame, text="● Online", bg=BG_SIDEBAR, fg="#22c55e",
+             font=("Segoe UI", 10)).pack(side="left", padx=(5, 0))
+
+    def logout():
+        if messagebox.askyesno("Xác nhận", "Bạn có chắc muốn thoát trang quản trị không?"):
+            win.destroy()
+            parent.deiconify()
+
+    tk.Button(header_frame, text="🚪 Thoát", bg="#ef4444", fg="white",
+              activebackground="#dc2626", relief="flat",
+              font=("Segoe UI", 10, "bold"), cursor="hand2",
+              command=logout).pack(side="right", padx=10)
+
+    # ===== MENU SECTIONS =====
     def nav_action(callback):
         for w in content.winfo_children():
             w.destroy()
@@ -69,7 +102,6 @@ def open_admin_login(parent):
                         command=lambda: nav_action(callback))
         btn.pack(fill="x", pady=2)
 
-    # ====== SIDEBAR SECTIONS ======
     tk.Label(sidebar, text="\nREPORTS", bg=BG_SIDEBAR, fg="#d1d5db", anchor="w").pack(fill="x", padx=10)
     add_nav("Dashboard", show_dashboard)
     add_nav("Votes", show_votes)
@@ -83,6 +115,7 @@ def open_admin_login(parent):
     add_nav("Ballot Position", lambda f: messagebox.showinfo("Ballot", "Tính năng đang phát triển..."))
     add_nav("Election Title", lambda f: messagebox.showinfo("Election", "Cài đặt tiêu đề bầu cử"))
 
+    # Hiển thị mặc định dashboard
     show_dashboard(content)
 
 
@@ -372,10 +405,24 @@ def show_voters(frame):
         return
 
     columns = list(rows[0].keys())
-    tree = ttk.Treeview(frame, columns=columns, show="headings", height=16)
+    style = ttk.Style()
+    style.configure("Treeview",
+                font=("Segoe UI", 10),          # Font chữ của nội dung
+                rowheight=26)
+    style.configure("Treeview.Heading",
+                font=("Segoe UI", 11, "bold"))  # Font chữ của tiêu đề cột
+
+    tree = ttk.Treeview(frame, columns=columns, show="headings")
     for col in columns:
         tree.heading(col, text=col)
-        tree.column(col, anchor="center", width=150)
+        tree.column(col, width=150, anchor="center")
+
+# Thêm scrollbar dọc
+    scroll_y = ttk.Scrollbar(frame, orient="vertical", command=tree.yview)
+    tree.configure(yscroll=scroll_y.set)
+    scroll_y.pack(side="right", fill="y")
+
+    tree.pack(fill="both", expand=True, padx=20, pady=10)
 
     for r in rows:
         tree.insert("", "end", values=list(r.values()))
