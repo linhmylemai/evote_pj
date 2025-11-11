@@ -1,4 +1,4 @@
-import sys, os, json, base64
+﻿import sys, os, json, base64
 sys.path.append(os.path.abspath(".."))  # Cho phép import module trong Project_eVote
 
 # ⚠️ TODO: cập nhật đường import theo repo của bạn

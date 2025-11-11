@@ -1,4 +1,5 @@
 import pathlib
+import sys
 import tkinter as tk
 from tkinter import ttk, messagebox
 import csv, os
@@ -119,130 +120,159 @@ def open_admin_login(parent):
     # Hiển thị mặc định dashboard
     show_dashboard(content)
 
-
-# ======= DASHBOARD =======
 def show_dashboard(frame):
+    import os, csv, traceback
+    import tkinter as tk
+    from tkinter import ttk, messagebox, Toplevel, Frame, Label, Button
+    from collections import defaultdict, Counter
+
+    # ===== DỌN FRAME =====
     for w in frame.winfo_children():
         w.destroy()
 
-    data = load_data()
-    num_pos = len(data["positions"])
-    num_cand = len(data["candidates"])
-    num_voters = len(data["voters"])
-    num_voted = len(set(r.get("Mã cử tri") for r in data["votes"] if r.get("Mã cử tri")))
+    # ===== ĐƯỜNG DẪN DỮ LIỆU =====
+    ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    DATA_DIR = os.path.join(ROOT, "server", "data", "input")
+    path_bau = os.path.join(DATA_DIR, "cuoc_bau.csv")
+    path_phieu = os.path.join(DATA_DIR, "phieu_bau_sach.csv")
+    path_uv = os.path.join(DATA_DIR, "ung_vien.csv")
+    path_chucvu = os.path.join(DATA_DIR, "chuc_vu.csv")
 
-    # ====== HEADER ======
-    header = tk.Frame(frame, bg=BG_MAIN)
-    header.pack(fill="x", pady=(20, 10))
-    tk.Label(header, text="📊 DASHBOARD", font=("Segoe UI", 22, "bold"),
-             bg=BG_MAIN, fg="#b5651d").pack()
+    # ===== ĐỌC FILE =====
+    cuoc_bau, phieu, uv_map, pos_map = [], [], {}, {}
 
-    # ====== STAT CARDS ======
-    cards = [
-        (num_pos, "No. of Positions", "#93c5fd"),
-        (num_cand, "No. of Candidates", "#fcd34d"),
-        (num_voters, "Total Voters", "#a5b4fc"),
-        (num_voted, "Voters Voted", "#86efac")
-    ]
+    def read_csv_safe(path):
+        if os.path.exists(path):
+            with open(path, "r", encoding="utf-8-sig") as f:
+                return list(csv.DictReader(f))
+        return []
 
-    stat_frame = tk.Frame(frame, bg=BG_MAIN)
-    stat_frame.pack(pady=(10, 30))
+    cuoc_bau = read_csv_safe(path_bau)
+    phieu = read_csv_safe(path_phieu)
+    for r in read_csv_safe(path_uv):
+        uv_map[r.get("Mã ứng viên", "")] = r.get("Họ và tên", "Không rõ")
+    for r in read_csv_safe(path_chucvu):
+        pos_map[r.get("Mã vị trí", "")] = r.get("Tên vị trí", "Không rõ")
 
-    for i, (val, label, color) in enumerate(cards):
-        card = tk.Frame(stat_frame, bg=color, width=220, height=100, highlightbackground="#e5e7eb", highlightthickness=1)
-        card.grid(row=0, column=i, padx=20, pady=10)
-        card.grid_propagate(False)
+    # ===== GOM PHIẾU THEO CỬ TRI =====
+    grouped = defaultdict(list)
+    for r in phieu:
+        voter = (r.get("Mã cử tri") or "").strip().upper()
+        if voter:
+            grouped[voter].append(r)
 
-        tk.Label(card, text=str(val), font=("Segoe UI", 26, "bold"),
-                 bg=color, fg="#111827").pack(pady=(10, 0))
-        tk.Label(card, text=label, font=("Segoe UI", 11, "bold"),
-                 bg=color, fg="#374151").pack(pady=(5, 10))
+    # ===== HEADER =====
+    header = Frame(frame, bg="#fdf6f0")
+    header.pack(fill="x", pady=(15, 5))
+    Label(header, text="🗳️ BẢNG ĐIỀU KHIỂN QUẢN TRỊ",
+          bg="#fdf6f0", fg="#b5651d", font=("Segoe UI", 22, "bold")).pack()
 
-    # ====== VOTES TALLY TABLE ======
-    tk.Label(frame, text="VOTES TALLY", font=("Segoe UI", 16, "bold"),
-             bg=BG_MAIN, fg=TXT_DARK).pack(pady=(5, 5))
+    if cuoc_bau:
+        cb = cuoc_bau[0]
+        info = f"📅 Cuộc bầu cử: {cb.get('Tiêu đề','?')}   ⏰ {cb.get('Thời gian bắt đầu','?')} → {cb.get('Thời gian kết thúc','?')}"
+        Label(frame, text=info, bg="#fdf6f0", fg="#6b7280",
+              font=("Segoe UI", 11, "italic")).pack(pady=(0, 15))
 
-    table_frame = tk.Frame(frame, bg=BG_MAIN)
-    table_frame.pack(fill="both", expand=True, padx=40, pady=10)
+    # ===== DANH SÁCH PHIẾU =====
+    Label(frame, text="📋 DANH SÁCH PHIẾU CỬ TRI", bg="#fdf6f0",
+          fg="#111827", font=("Segoe UI", 14, "bold")).pack()
+    table_frame = Frame(frame, bg="#fdf6f0")
+    table_frame.pack(fill="both", expand=True, padx=20, pady=(5, 5))
 
-    votes = data["votes"]
-    cands = data["candidates"]
-
-    # Map ứng viên
-    cand_map = {}
-    for c in cands:
-        cid = c.get("Mã ứng viên")
-        name = c.get("Họ và tên", "")
-        pos = c.get("Chức vụ", "Unknown")
-        if cid:
-            cand_map[cid] = (name, pos)
-
-    # Đếm phiếu
-    tally = {}
-    for v in votes:
-        if v.get("Hợp lệ", "").lower() == "true":
-            cid = v.get("Mã ứng viên")
-            if cid in cand_map:
-                name, pos = cand_map[cid]
-                tally.setdefault(pos, Counter())[name] += 1
-
-    columns = ("Position", "Candidate", "Votes")
-    tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=14)
-    for col in columns:
-        tree.heading(col, text=col)
-        tree.column(col, anchor="center", width=200)
-
-    for pos, counts in tally.items():
-        for name, num in sorted(counts.items(), key=lambda x: x[1], reverse=True):
-            tree.insert("", "end", values=(pos, name, num))
-
+    columns = ("stt", "pid", "voter", "status")
+    tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=10)
+    for c in columns:
+        tree.column(c, anchor="center", width=180)
+    for name, text in zip(columns, ["STT", "Mã phiếu", "Mã cử tri", "Trạng thái"]):
+        tree.heading(name, text=text)
     tree.pack(fill="both", expand=True)
 
+    # ===== HIỂN THỊ DANH SÁCH =====
+    for i, (voter, items) in enumerate(grouped.items(), 1):
+        valid = [x for x in items if (x.get("Hợp lệ") or "").lower() == "true"]
+        count = len(valid)
+        status = "✅ Đã đủ 8" if count >= 8 else f"❌ Thiếu {8 - count}"
+        pid = (items[0].get("Mã phiếu") or "").split("_")[0]
+        tree.insert("", "end", values=(i, pid, voter, status))
 
-# ======= VOTES (chi tiết phiếu bầu) =======
-def show_votes(frame):
-    for w in frame.winfo_children():
-        w.destroy()
+    # ===== CHI TIẾT PHIẾU =====
+    frame_detail = ttk.LabelFrame(frame, text="📄 CHI TIẾT PHIẾU (DỮ LIỆU MÃ HÓA)", padding=5)
+    frame_detail.pack(fill="both", expand=True, padx=20, pady=10)
+    tree_ct = ttk.Treeview(frame_detail, columns=("pos", "cipher"), show="headings", height=8)
+    tree_ct.heading("pos", text="Vị trí / Chức vụ")
+    tree_ct.heading("cipher", text="Dữ liệu mã hoá")
+    tree_ct.column("pos", width=250, anchor="center")
+    tree_ct.column("cipher", width=400, anchor="w")
+    tree_ct.pack(fill="both", expand=True)
 
-    data = load_data()
-    votes = data["votes"]
-    cands = data["candidates"]
+    def on_select(event):
+        for i in tree_ct.get_children():
+            tree_ct.delete(i)
+        sel = tree.selection()
+        if not sel:
+            return
 
-    tk.Label(frame, text="📋 VOTES REPORT", bg=BG_MAIN,
-             fg="#b5651d", font=("Segoe UI", 18, "bold")).pack(pady=15)
+        voter = tree.item(sel[0])["values"][2]
+        rows = grouped[voter]
+        valid = [r for r in rows if (r.get("Hợp lệ") or "").lower() == "true"][:8]
 
-    if not votes:
-        tk.Label(frame, text="Không có dữ liệu phiếu bầu!", bg=BG_MAIN, fg="red").pack()
-        return
+        # 🔹 Nạp chuc_vu mapping (Mã ứng viên → Tên chức vụ)
+        uv_to_pos = {}
+        if os.path.exists(path_chucvu):
+            with open(path_chucvu, "r", encoding="utf-8-sig") as f:
+                for row in csv.DictReader(f):
+                    uv_to_pos[row.get("Mã ứng viên")] = row.get("Chức vụ", "Không rõ")
 
-    cand_map = {}
-    for c in cands:
-        cid = c.get("Mã ứng viên")
-        name = c.get("Họ và tên", "")
-        pos = c.get("Chức vụ", "Unknown")
-        if cid:
-            cand_map[cid] = (name, pos)
+        for r in valid:
+            uv = (r.get("Mã ứng viên") or "").strip()
+            uv_name = uv_map.get(uv, "Không rõ")
+            pos_name = uv_to_pos.get(uv, "Không rõ")
+            cipher = f"🔐 {uv_name[:8]}..."  # giả lập dữ liệu mã hóa
+            tree_ct.insert("", "end", values=(pos_name, cipher))
 
-    columns = ("Mã phiếu", "Mã cử tri", "Ứng viên", "Chức vụ", "Hợp lệ", "Thời điểm")
-    tree = ttk.Treeview(frame, columns=columns, show="headings", height=18)
-    for col in columns:
-        tree.heading(col, text=col)
-        tree.column(col, anchor="center", width=150)
+    # ===== NÚT CHỨC NĂNG =====
+    decrypt_done = False
+    tally_counter = Counter()
 
-    for v in votes:
-        cid = v.get("Mã ứng viên")
-        name, pos = cand_map.get(cid, ("Unknown", "Unknown"))
-        tree.insert("", "end", values=(
-            v.get("Mã phiếu"),
-            v.get("Mã cử tri"),
-            name,
-            pos,
-            v.get("Hợp lệ"),
-            v.get("Thời điểm bỏ phiếu")
-        ))
+    def decrypt_votes():
+        nonlocal decrypt_done, tally_counter
+        try:
+            # ✅ Giả lập “giải mã” = đọc CSV thật
+            decrypted = [r for r in phieu if (r.get("Hợp lệ") or "").lower() == "true"]
+            for r in decrypted:
+                cid = r.get("Mã ứng viên")
+                name = uv_map.get(cid, f"UV {cid}")
+                tally_counter[name] += 1
 
-    tree.pack(fill="both", expand=True, padx=20, pady=10)
+            decrypt_done = True
+            messagebox.showinfo("✅ Thành công",
+                                f"Đã giải mã {len(decrypted)} phiếu bầu hợp lệ.\nBấm '🧮 Kiểm phiếu' để xem kết quả.")
+        except Exception as e:
+            traceback.print_exc()
+            messagebox.showerror("Lỗi", f"Không thể giải mã phiếu!\nChi tiết: {e}")
 
+    def tally_now():
+        nonlocal decrypt_done, tally_counter
+        if not decrypt_done:
+            messagebox.showwarning("⚠️ Cảnh báo", "Hãy giải mã phiếu trước khi kiểm phiếu!")
+            return
+        win = Toplevel(frame)
+        win.title("KẾT QUẢ KIỂM PHIẾU")
+        win.configure(bg="#fdf6f0")
+        Label(win, text="📊 KẾT QUẢ KIỂM PHIẾU", font=("Segoe UI", 14, "bold"),
+              bg="#fdf6f0", fg="#b5651d").pack(pady=10)
+        for name, count in tally_counter.most_common():
+            Label(win, text=f"{name} ({count} phiếu)",
+                  font=("Segoe UI", 12, "bold"), fg="#eab308",
+                  bg="#fdf6f0").pack(anchor="w", padx=25, pady=2)
+
+    # ===== HÀNG NÚT =====
+    btns = Frame(frame, bg="#fdf6f0")
+    btns.pack(pady=10)
+    Button(btns, text="🔓 Giải mã phiếu", bg="#93c5fd", font=("Segoe UI", 11, "bold"),
+           command=decrypt_votes, width=20).pack(side="left", padx=10)
+    Button(btns, text="🧮 Kiểm phiếu", bg="#86efac", font=("Segoe UI", 11, "bold"),
+           command=tally_now, width=20).pack(side="left", padx=10)
 
 # ======= VOTERS =======
 def show_voters(frame):

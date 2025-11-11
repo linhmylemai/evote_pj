@@ -86,12 +86,33 @@ def rsa_encrypt(public_key_bytes: bytes, data: bytes):
         )
     )
     return ciphertext
+def rsa_decrypt(private_key: rsa.RSAPrivateKey, ciphertext: bytes) -> bytes:
+    """
+    Giải mã dữ liệu đã mã hóa bằng RSA Public Key (OAEP + SHA256).
+    Trả về plaintext bytes hoặc None nếu thất bại.
+    """
+    try:
+        plaintext = private_key.decrypt(
+            ciphertext,
+            padding.OAEP(
+                mgf=padding.MGF1(algorithm=hashes.SHA256()),
+                algorithm=hashes.SHA256(),
+                label=None
+            )
+        )
+        return plaintext
+    except Exception as e:
+        print(f"❌ Lỗi RSA giải mã: {e}")
+        return None
 
 def aes_gcm_decrypt(key: bytes, iv: bytes, ciphertext_with_tag: bytes) -> bytes:
     """Giải mã nội dung phiếu bầu bằng AES-GCM"""
     aesgcm = AESGCM(key)
     plaintext = aesgcm.decrypt(iv, ciphertext_with_tag, ciphertext_with_tag) # AESGCM.decrypt không cần tag riêng
     return plaintext
+
+
+
 
 # --- 4. Xác thực Mật khẩu ---
 
