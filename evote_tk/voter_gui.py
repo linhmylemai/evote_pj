@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
-import csv, os
+import csv, os, pathlib
 from datetime import datetime
 
 # ===== STYLE =====
@@ -12,8 +12,9 @@ BTN_GRAY = "#9ca3af"
 BTN_HOVER = "#1d4ed8"
 TITLE_COLOR = "#b5651d"
 
-DATA_DIR = os.path.join("..", "server", "data", "input")
-
+# ===== ĐƯỜNG DẪN CSV =====
+BASE_DIR = pathlib.Path(__file__).resolve().parent
+DATA_DIR = BASE_DIR.parent / "server" / "data" / "input"
 
 # ===== Helper: đọc CSV =====
 def read_csv(path):
@@ -28,7 +29,6 @@ def read_csv(path):
             continue
     return []
 
-
 # ===== Helper: ghi CSV (append) =====
 def append_csv(path, row, headers):
     file_exists = os.path.exists(path)
@@ -38,6 +38,21 @@ def append_csv(path, row, headers):
             writer.writeheader()
         writer.writerow(row)
 
+# ===== HÀM ĐỌC ỨNG VIÊN =====
+def read_candidates():
+    path = DATA_DIR / "ung_vien.csv"
+    rows = []
+    if not path.exists():
+        return rows
+    with open(path, "r", encoding="utf-8-sig", errors="ignore") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            rows.append({
+                "Mã ứng viên": (row.get("Mã ứng viên") or "").strip(),
+                "Họ và tên": (row.get("Họ và tên") or "").strip(),
+                "Chức vụ": (row.get("Chức vụ") or "").strip()
+            })
+    return rows
 
 # ===== GIAO DIỆN BỎ PHIẾU =====
 def open_voter_window(parent, voter_id):
@@ -65,11 +80,22 @@ def open_voter_window(parent, voter_id):
     canvas.configure(yscrollcommand=scrollbar.set)
     canvas.pack(side="left", fill="both", expand=True)
     scrollbar.pack(side="right", fill="y")
+    
+    # ===== Cuộn chuột mượt =====
+    def smooth_scroll(event):
+        direction = -1 if event.delta > 0 else 1
+        canvas.yview_scroll(direction, "units")
+        return "break"
+
+    canvas.bind_all("<MouseWheel>", smooth_scroll)  
+    canvas.bind_all("<Button-4>", lambda e: canvas.yview_scroll(-1, "units")) 
+    canvas.bind_all("<Button-5>", lambda e: canvas.yview_scroll(1, "units"))  
+
 
     # ===== ĐỌC DỮ LIỆU =====
-    chuc_vu = read_csv(os.path.join(DATA_DIR, "chuc_vu.csv"))
-    ung_vien = read_csv(os.path.join(DATA_DIR, "ung_vien.csv"))
-    cuoc_bau = read_csv(os.path.join(DATA_DIR, "cuoc_bau.csv"))
+    chuc_vu = read_csv(DATA_DIR / "chuc_vu.csv")
+    ung_vien = read_csv(DATA_DIR / "ung_vien.csv")
+    cuoc_bau = read_csv(DATA_DIR / "cuoc_bau.csv")
 
     ma_cuoc_bau = cuoc_bau[0]["Mã cuộc bầu"] if cuoc_bau else "CB001"
 
@@ -94,7 +120,6 @@ def open_voter_window(parent, voter_id):
     grid_roles.pack(fill="x", padx=20, pady=10)
 
     for i, (pos, uvs) in enumerate(pos_list):
-        # ==== KHUNG CHỨC VỤ ====
         role_card = tk.Frame(
             grid_roles,
             bg=BG_MAIN,
@@ -105,18 +130,15 @@ def open_voter_window(parent, voter_id):
         )
         role_card.grid(row=i // cols, column=i % cols, padx=20, pady=15, sticky="n")
 
-        # Tiêu đề chức vụ
         tk.Label(role_card, text=pos.upper(),
                  font=("Segoe UI", 15, "bold"), bg=BG_MAIN, fg=TITLE_COLOR).pack(anchor="center", pady=(5, 10))
 
         var = tk.StringVar()
         selections[pos] = var
 
-        # Tiêu đề phụ
         tk.Label(role_card, text="Select only one candidate",
                  font=("Segoe UI", 10, "italic"), bg=BG_MAIN, fg="#6b7280").pack(anchor="center", pady=(0, 8))
 
-        # ==== DANH SÁCH ỨNG VIÊN ====
         for uid in uvs:
             name = name_map.get(uid, f"Ứng viên {uid}")
             cand_card = tk.Frame(role_card, bg=BG_CARD, bd=1, relief="solid", padx=10, pady=5)
@@ -125,14 +147,12 @@ def open_voter_window(parent, voter_id):
             left = tk.Frame(cand_card, bg=BG_CARD)
             left.pack(fill="x")
 
-            # Radio chọn ứng viên
             tk.Radiobutton(left, variable=var, value=uid,
                            bg=BG_CARD, activebackground=BG_CARD).pack(side="left", padx=(5, 10))
-            # Tên ứng viên
+                        
             tk.Label(left, text=name, font=("Segoe UI", 12, "bold"),
                      bg=BG_CARD, fg=TXT_DARK).pack(side="left", padx=(0, 10))
 
-            # Nút xem thông tin
             def show_info(uid=uid, pos=pos):
                 info = next((u for u in ung_vien if u.get("Mã ứng viên") == uid), None)
                 if not info:
@@ -155,15 +175,30 @@ def open_voter_window(parent, voter_id):
     bottom = tk.Frame(win, bg=BG_MAIN)
     bottom.pack(fill="x", pady=15)
 
-    # ===== HÀM GỬI PHIẾU =====
     def submit_vote():
         result = {pos: var.get() for pos, var in selections.items()}
         if any(v == "" for v in result.values()):
             messagebox.showwarning("Thiếu lựa chọn", "Vui lòng chọn ứng viên cho tất cả chức vụ!")
             return
 
-        phieu_raw_path = os.path.join(DATA_DIR, "phieu_bau_raw.csv")
-        phieu_sach_path = os.path.join(DATA_DIR, "phieu_bau_sach.csv")
+    # ===== Tạo nội dung xác nhận =====
+        summary_text = "🗳 XÁC NHẬN PHIẾU BẦU\n\n"
+        for pos, uid in result.items():
+            name = name_map.get(uid, "Không rõ")
+            summary_text += f"• {pos}: {name}\n"
+
+        confirm = messagebox.askyesno(
+            "Xác nhận bỏ phiếu",
+            summary_text + "\n\nBạn có chắc muốn gửi phiếu bầu này không?"
+        )
+
+        if not confirm:
+            messagebox.showinfo("Đã hủy", "Bạn có thể xem lại lựa chọn của mình trước khi gửi.")
+            return
+
+    # ===== Nếu người dùng chọn 'Có' → Ghi phiếu =====
+        phieu_raw_path = DATA_DIR / "phieu_bau_raw.csv"
+        phieu_sach_path = DATA_DIR / "phieu_bau_sach.csv"
 
         existing = read_csv(phieu_raw_path)
         next_id = len(existing) + 1
@@ -183,12 +218,11 @@ def open_voter_window(parent, voter_id):
             append_csv(phieu_raw_path, row, row.keys())
             append_csv(phieu_sach_path, row, row.keys())
 
-        messagebox.showinfo("Gửi phiếu thành công ✅",
-                            "Phiếu của bạn đã được ghi nhận vào hệ thống!")
+        messagebox.showinfo("Gửi phiếu thành công ✅", "Phiếu của bạn đã được ghi nhận vào hệ thống!")
         win.destroy()
         parent.deiconify()
 
-    # ===== NÚT GỬI & ĐÓNG =====
+
     tk.Button(bottom, text="ĐÓNG", bg=BTN_GRAY, fg="white",
               font=("Segoe UI", 11, "bold"), width=10, relief="flat",
               command=lambda: (win.destroy(), parent.deiconify())).pack(side="right", padx=10)
@@ -197,3 +231,4 @@ def open_voter_window(parent, voter_id):
               font=("Segoe UI", 11, "bold"), width=15, relief="flat",
               activebackground=BTN_HOVER,
               command=submit_vote).pack(side="right", padx=10)
+      

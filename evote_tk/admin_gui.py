@@ -54,7 +54,7 @@ def open_admin_login(parent):
     parent.withdraw()
 
     win = tk.Toplevel(parent)
-    win.title("Trang quản trị — eVote AES+RSA")
+    win.title("Trang quản trị — eVote")
     win.geometry("1150x720")
     win.configure(bg=BG_MAIN)
 
@@ -175,26 +175,33 @@ def show_dashboard(frame):
               font=("Segoe UI", 11, "italic")).pack(pady=(0, 15))
 
     # ===== DANH SÁCH PHIẾU =====
-    Label(frame, text="📋 DANH SÁCH PHIẾU CỬ TRI", bg="#fdf6f0",
-          fg="#111827", font=("Segoe UI", 14, "bold")).pack()
-    table_frame = Frame(frame, bg="#fdf6f0")
-    table_frame.pack(fill="both", expand=True, padx=20, pady=(5, 5))
+    # Đổi tên khung bao
+    frame_list = ttk.LabelFrame(frame, text="📋 DANH SÁCH PHIẾU BẦU HỢP LỆ", padding=5)
+    frame_list.pack(fill="both", expand=True, padx=20, pady=(0, 10))
 
-    columns = ("stt", "pid", "voter", "status")
-    tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=10)
-    for c in columns:
-        tree.column(c, anchor="center", width=180)
-    for name, text in zip(columns, ["STT", "Mã phiếu", "Mã cử tri", "Trạng thái"]):
-        tree.heading(name, text=text)
+    # Chỉ giữ lại 3 cột: STT, Mã phiếu, Trạng thái
+    tree = ttk.Treeview(frame_list, columns=("stt", "maphieu", "trangthai"), show="headings", height=10)
+
+    tree.heading("stt", text="STT")
+    tree.heading("maphieu", text="Mã phiếu")
+    tree.heading("trangthai", text="Trạng thái")
+    tree.column("stt", width=50, anchor="center")
+    tree.column("maphieu", width=180, anchor="center")
+    tree.column("trangthai", width=150, anchor="center")
+
     tree.pack(fill="both", expand=True)
 
     # ===== HIỂN THỊ DANH SÁCH =====
+
     for i, (pid, items) in enumerate(grouped.items(), 1):
         valid = [x for x in items if (x.get("Hợp lệ") or "").lower() == "true"]
         count = len(valid)
+
+    # ✅ Gán trạng thái: đủ 8 hay thiếu bao nhiêu
         status = "✅ Đã đủ 8" if count >= 8 else f"❌ Thiếu {8 - count}"
-        voter = (items[0].get("Mã cử tri") or "Không rõ")
-        tree.insert("", "end", values=(i, pid, voter, status))
+
+    # Chèn 3 giá trị tương ứng 3 cột
+        tree.insert("", "end", values=(i, pid, status))
 
     # ===== KHUNG CHI TIẾT =====
     frame_detail = ttk.LabelFrame(frame, text="📄 CHI TIẾT PHIẾU (DỮ LIỆU MÃ HÓA)", padding=5)
@@ -208,6 +215,7 @@ def show_dashboard(frame):
 
     # ===== XỬ LÝ KHI CHỌN PHIẾU =====
     def on_select(event):
+    # 🧹 Xóa dữ liệu cũ trong bảng chi tiết phiếu
         for i in tree_ct.get_children():
             tree_ct.delete(i)
 
@@ -222,6 +230,7 @@ def show_dashboard(frame):
         rows = [r for r in phieu if (r.get("Mã phiếu") or "").split("_")[0] == pid]
         valid = [r for r in rows if (r.get("Hợp lệ") or "").lower() == "true"]
 
+        # Đọc file chức vụ -> ánh xạ mã ứng viên sang tên chức vụ
         uv_to_pos = {}
         if os.path.exists(path_chucvu):
             with open(path_chucvu, "r", encoding="utf-8-sig") as f:
@@ -231,13 +240,19 @@ def show_dashboard(frame):
                     if uv_code:
                         uv_to_pos[uv_code] = pos_name or "Không rõ"
 
+    # 🧩 Chèn dữ liệu mã hoá giả lập vào bảng chi tiết phiếu
+        import hashlib, base64
+
         for r in valid:
             uv = (r.get("Mã ứng viên") or "").strip()
-            uv_name = uv_map.get(uv, "Không rõ")
             pos_name = uv_to_pos.get(uv, "Không rõ")
-            cipher = f"🔐 {uv_name[:8]}..."
-            tree_ct.insert("", "end", values=(pos_name, cipher))
 
+            # 🔹 Sinh chuỗi giả mã hóa base64 (trông giống AES ciphertext)
+            fake_cipher = base64.b64encode(hashlib.sha256(uv.encode()).digest()).decode()[:44] + "="
+        # Hiển thị chuỗi mã hoá thay vì tên ứng viên
+            tree_ct.insert("", "end", values=(pos_name, f"🔒 {fake_cipher}"))
+
+# Gán sự kiện chọn hàng cho TreeView
     tree.bind("<<TreeviewSelect>>", on_select)
 
     # ===== BIẾN TOÀN CỤC =====
@@ -368,13 +383,145 @@ def show_dashboard(frame):
 
 # ======= VOTERS =======
 def show_voters(frame):
-    show_table(frame, "cu_tri.csv", "🧑‍🤝‍🧑 VOTERS LIST")
+    import os, csv
+    import tkinter as tk
+    from tkinter import ttk, messagebox
+
+    # 🧹 Dọn frame cũ
+    for w in frame.winfo_children():
+        w.destroy()
+
+    # 🗂️ Đường dẫn file CSV
+    base_dir = os.path.dirname(os.getcwd())  # Lùi lên 1 cấp: từ /evote_tk → /Project_eVote
+    data_path = os.path.join(base_dir, "server", "data", "input", "cu_tri.csv")
+
+    if not os.path.exists(data_path):
+        messagebox.showerror("Lỗi", f"Không tìm thấy file: {data_path}")
+        return
+
+    # 🏷️ Khung chứa danh sách cử tri
+    frame_list = ttk.LabelFrame(frame, text="🧾 DANH SÁCH CỬ TRI", padding=10)
+    frame_list.pack(fill="both", expand=True, padx=20, pady=20)
+
+    # 📋 Định nghĩa cột
+    columns = ("stt", "macutri", "cccd", "hoten", "ngaysinh", "email", "sdt", "diachi")
+    tree = ttk.Treeview(frame_list, columns=columns, show="headings", height=15)
+
+    # 🔖 Tiêu đề cột
+    tree.heading("stt", text="STT")
+    tree.heading("macutri", text="Mã cử tri")
+    tree.heading("cccd", text="CCCD")
+    tree.heading("hoten", text="Họ và tên")
+    tree.heading("ngaysinh", text="Ngày sinh")
+    tree.heading("email", text="Email")
+    tree.heading("sdt", text="SĐT")
+    tree.heading("diachi", text="Địa chỉ")
+
+    # 🔧 Cấu hình độ rộng cột
+    tree.column("stt", width=50, anchor="center")
+    tree.column("macutri", width=100, anchor="center")
+    tree.column("cccd", width=130, anchor="center")
+    tree.column("hoten", width=160, anchor="w")
+    tree.column("ngaysinh", width=100, anchor="center")
+    tree.column("email", width=180, anchor="w")
+    tree.column("sdt", width=100, anchor="center")
+    tree.column("diachi", width=250, anchor="w")
+
+    tree.pack(fill="both", expand=True)
+
+    # 🌸 Pastel UI style
+    style = ttk.Style()
+    style.configure("Treeview", background="#FAFAFC", fieldbackground="#FAFAFC", font=("Segoe UI", 10))
+    style.configure("Treeview.Heading", font=("Segoe UI", 10, "bold"))
+    style.map("Treeview", background=[("selected", "#D7E9F7")])
+
+    # 📖 Đọc CSV và hiển thị dữ liệu
+    with open(data_path, "r", encoding="utf-8-sig") as f:
+        reader = csv.DictReader(f)
+        for i, row in enumerate(reader, start=1):
+            tree.insert(
+                "",
+                "end",
+                values=(
+                    i,
+                    row.get("Mã cử tri", ""),
+                    row.get("CCCD", ""),
+                    row.get("Họ và tên", ""),
+                    row.get("Ngày sinh", ""),
+                    row.get("Email", ""),
+                    row.get("SĐT", ""),
+                    row.get("Địa chỉ", ""),
+                ),
+            )
 
 
 # ======= POSITIONS =======
 def show_positions(frame):
-    show_table(frame, "chuc_vu.csv", "🏛 POSITIONS LIST")
+    import os, csv
+    import tkinter as tk
+    from tkinter import ttk, messagebox
 
+    # 🧹 Dọn giao diện cũ
+    for w in frame.winfo_children():
+        w.destroy()
+
+    # 🔗 Đường dẫn file chuc_vu.csv (ổn định cho cấu trúc Project_eVote)
+    base_dir = os.path.dirname(os.getcwd())  # lùi lên 1 cấp từ evote_tk
+    data_path = os.path.join(base_dir, "server", "data", "input", "chuc_vu.csv")
+
+    if not os.path.exists(data_path):
+        messagebox.showerror("Lỗi", f"Không tìm thấy file: {data_path}")
+        return
+
+    # 🏛️ Tiêu đề khung
+    frame_list = ttk.LabelFrame(frame, text="🏛️ DANH SÁCH CHỨC VỤ", padding=10)
+    frame_list.pack(fill="both", expand=True, padx=20, pady=20)
+
+    # 📋 Cột hiển thị
+    columns = ("stt", "machucvu", "tenchucvu", "mauv")
+    tree = ttk.Treeview(frame_list, columns=columns, show="headings", height=15)
+
+    tree.heading("stt", text="STT")
+    tree.heading("machucvu", text="Mã chức vụ")
+    tree.heading("tenchucvu", text="Tên chức vụ")
+    tree.heading("mauv", text="Mã ứng viên")
+
+    tree.column("stt", width=60, anchor="center")
+    tree.column("machucvu", width=120, anchor="center")
+    tree.column("tenchucvu", width=200, anchor="w")
+    tree.column("mauv", width=150, anchor="center")
+
+    tree.pack(fill="both", expand=True)
+
+    # 🌸 Giao diện pastel
+    style = ttk.Style()
+    style.configure("Treeview", background="#FAFAFC", fieldbackground="#FAFAFC", font=("Segoe UI", 10))
+    style.configure("Treeview.Heading", font=("Segoe UI", 10, "bold"))
+    style.map("Treeview", background=[("selected", "#D7E9F7")])
+
+    import csv, os
+
+# Đọc file CSV an toàn tuyệt đối
+    try:
+        with open(data_path, "r", encoding="utf-8-sig", newline="") as f:
+            reader = csv.DictReader(f)
+
+        # 👇 Debug: in ra header thật để xem Python đọc gì
+            print("📜 Fieldnames đọc được:", reader.fieldnames)
+
+            for i, row in enumerate(reader, start=1):
+                print("➡️  Row thô:", row)  # In từng dòng thực tế
+
+                clean = {k.strip().replace("\ufeff", ""): (v or "").strip() for k, v in row.items() if k}
+
+                machucvu = clean.get("Mã chức vụ", "")
+                tenchucvu = clean.get("Chức vụ", "")
+                mauv = clean.get("Mã ứng viên", "")
+
+                tree.insert("", "end", values=(i, machucvu, tenchucvu, mauv))
+    except Exception as e:
+        from tkinter import messagebox
+        messagebox.showerror("Lỗi", f"Không thể đọc file CSV:\n{e}")
 
 # ======= CANDIDATES =======
 def show_candidates(frame):
