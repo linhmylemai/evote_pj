@@ -38,27 +38,11 @@ def append_csv(path, row, headers):
             writer.writeheader()
         writer.writerow(row)
 
-# ===== HÀM ĐỌC ỨNG VIÊN =====
-def read_candidates():
-    path = DATA_DIR / "ung_vien.csv"
-    rows = []
-    if not path.exists():
-        return rows
-    with open(path, "r", encoding="utf-8-sig", errors="ignore") as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            rows.append({
-                "Mã ứng viên": (row.get("Mã ứng viên") or "").strip(),
-                "Họ và tên": (row.get("Họ và tên") or "").strip(),
-                "Chức vụ": (row.get("Chức vụ") or "").strip()
-            })
-    return rows
-
 # ===== GIAO DIỆN BỎ PHIẾU =====
 def open_voter_window(parent, voter_id):
     parent.withdraw()
     win = tk.Toplevel()
-    win.title("🗳 Bỏ phiếu điện tử — eVote AES+RSA")
+    win.title("🗳 Bỏ phiếu điện tử — eVote")
     win.geometry("1100x700")
     win.configure(bg=BG_MAIN)
 
@@ -80,17 +64,15 @@ def open_voter_window(parent, voter_id):
     canvas.configure(yscrollcommand=scrollbar.set)
     canvas.pack(side="left", fill="both", expand=True)
     scrollbar.pack(side="right", fill="y")
-    
+
     # ===== Cuộn chuột mượt =====
     def smooth_scroll(event):
         direction = -1 if event.delta > 0 else 1
         canvas.yview_scroll(direction, "units")
         return "break"
-
-    canvas.bind_all("<MouseWheel>", smooth_scroll)  
-    canvas.bind_all("<Button-4>", lambda e: canvas.yview_scroll(-1, "units")) 
-    canvas.bind_all("<Button-5>", lambda e: canvas.yview_scroll(1, "units"))  
-
+    canvas.bind_all("<MouseWheel>", smooth_scroll)
+    canvas.bind_all("<Button-4>", lambda e: canvas.yview_scroll(-1, "units"))
+    canvas.bind_all("<Button-5>", lambda e: canvas.yview_scroll(1, "units"))
 
     # ===== ĐỌC DỮ LIỆU =====
     chuc_vu = read_csv(DATA_DIR / "chuc_vu.csv")
@@ -99,7 +81,7 @@ def open_voter_window(parent, voter_id):
 
     ma_cuoc_bau = cuoc_bau[0]["Mã cuộc bầu"] if cuoc_bau else "CB001"
 
-    # ===== TẠO MAP MÃ ỨNG VIÊN → TÊN =====
+    # ===== MAP MÃ ỨNG VIÊN → TÊN =====
     name_map = {u["Mã ứng viên"]: u["Họ và tên"] for u in ung_vien if u.get("Mã ứng viên")}
 
     # ===== GOM NHÓM ỨNG VIÊN THEO CHỨC VỤ =====
@@ -111,14 +93,38 @@ def open_voter_window(parent, voter_id):
             grouped.setdefault(pos, []).append(uid)
 
     selections = {}
-
-    # ===== HIỂN THỊ THEO 3 CỘT =====
     pos_list = list(grouped.items())
     cols = 3
 
     grid_roles = tk.Frame(scroll_frame, bg=BG_MAIN)
     grid_roles.pack(fill="x", padx=20, pady=10)
 
+    # ===== HÀM TẠO RADIO CANVAS TO =====
+    def make_radio(frame, group_var, value):
+        """Tạo nút chọn tròn lớn kiểu web"""
+        circle = tk.Canvas(frame, width=28, height=28, bg=BG_CARD, highlightthickness=0, bd=0)
+        circle.pack(side="left", padx=(8, 10), pady=2)
+        outer = circle.create_oval(3, 3, 25, 25, outline="#2563eb", width=2)
+        inner = circle.create_oval(8, 8, 20, 20, fill="", outline="")
+
+        def update_state(*_):
+            if group_var.get() == value:
+                circle.itemconfig(inner, fill="#2563eb")
+            else:
+                circle.itemconfig(inner, fill="")
+
+        def select(event=None):
+            group_var.set(value)
+            update_state()
+
+        # hiệu ứng hover
+        circle.bind("<Enter>", lambda e: circle.itemconfig(outer, width=3))
+        circle.bind("<Leave>", lambda e: circle.itemconfig(outer, width=2))
+        circle.bind("<Button-1>", select)
+        group_var.trace_add("write", update_state)
+        return circle
+
+    # ===== HIỂN THỊ DANH SÁCH CHỨC VỤ & ỨNG VIÊN =====
     for i, (pos, uvs) in enumerate(pos_list):
         role_card = tk.Frame(
             grid_roles,
@@ -141,16 +147,15 @@ def open_voter_window(parent, voter_id):
 
         for uid in uvs:
             name = name_map.get(uid, f"Ứng viên {uid}")
-            cand_card = tk.Frame(role_card, bg=BG_CARD, bd=1, relief="solid", padx=10, pady=5)
-            cand_card.pack(fill="x", padx=10, pady=5)
+            cand_card = tk.Frame(role_card, bg=BG_CARD, bd=1, relief="solid", padx=10, pady=8)
+            cand_card.pack(fill="x", padx=10, pady=6)
 
             left = tk.Frame(cand_card, bg=BG_CARD)
             left.pack(fill="x")
 
-            tk.Radiobutton(left, variable=var, value=uid,
-                           bg=BG_CARD, activebackground=BG_CARD).pack(side="left", padx=(5, 10))
-                        
-            tk.Label(left, text=name, font=("Segoe UI", 12, "bold"),
+            make_radio(left, var, uid)
+
+            tk.Label(left, text=name, font=("Segoe UI", 13, "bold"),
                      bg=BG_CARD, fg=TXT_DARK).pack(side="left", padx=(0, 10))
 
             def show_info(uid=uid, pos=pos):
@@ -168,7 +173,7 @@ def open_voter_window(parent, voter_id):
 
             tk.Button(left, text="Thông tin", bg=BTN_PRIMARY, fg="white",
                       font=("Segoe UI", 10, "bold"), relief="flat",
-                      activebackground=BTN_HOVER,
+                      activebackground=BTN_HOVER, cursor="hand2",
                       command=lambda u=uid, p=pos: show_info(u, p)).pack(side="right")
 
     # ===== NÚT DƯỚI =====
@@ -181,7 +186,6 @@ def open_voter_window(parent, voter_id):
             messagebox.showwarning("Thiếu lựa chọn", "Vui lòng chọn ứng viên cho tất cả chức vụ!")
             return
 
-    # ===== Tạo nội dung xác nhận =====
         summary_text = "🗳 XÁC NHẬN PHIẾU BẦU\n\n"
         for pos, uid in result.items():
             name = name_map.get(uid, "Không rõ")
@@ -191,12 +195,10 @@ def open_voter_window(parent, voter_id):
             "Xác nhận bỏ phiếu",
             summary_text + "\n\nBạn có chắc muốn gửi phiếu bầu này không?"
         )
-
         if not confirm:
             messagebox.showinfo("Đã hủy", "Bạn có thể xem lại lựa chọn của mình trước khi gửi.")
             return
 
-    # ===== Nếu người dùng chọn 'Có' → Ghi phiếu =====
         phieu_raw_path = DATA_DIR / "phieu_bau_raw.csv"
         phieu_sach_path = DATA_DIR / "phieu_bau_sach.csv"
 
@@ -222,7 +224,6 @@ def open_voter_window(parent, voter_id):
         win.destroy()
         parent.deiconify()
 
-
     tk.Button(bottom, text="ĐÓNG", bg=BTN_GRAY, fg="white",
               font=("Segoe UI", 11, "bold"), width=10, relief="flat",
               command=lambda: (win.destroy(), parent.deiconify())).pack(side="right", padx=10)
@@ -231,4 +232,3 @@ def open_voter_window(parent, voter_id):
               font=("Segoe UI", 11, "bold"), width=15, relief="flat",
               activebackground=BTN_HOVER,
               command=submit_vote).pack(side="right", padx=10)
-      
