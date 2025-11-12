@@ -186,43 +186,71 @@ def open_voter_window(parent, voter_id):
             messagebox.showwarning("Thiếu lựa chọn", "Vui lòng chọn ứng viên cho tất cả chức vụ!")
             return
 
-        summary_text = "🗳 XÁC NHẬN PHIẾU BẦU\n\n"
+    # ===== Tạo cửa sổ xác nhận riêng =====
+        confirm_win = tk.Toplevel(win)
+        confirm_win.title("🗳 Xác nhận phiếu bầu")
+        confirm_win.geometry("500x500")
+        confirm_win.config(bg="#fff8f0")
+        confirm_win.grab_set()  # khóa cửa sổ chính
+
+        tk.Label(confirm_win, text="🗳 XÁC NHẬN PHIẾU BẦU",
+             font=("Segoe UI", 18, "bold"),
+             fg="#b5651d", bg="#fff8f0").pack(pady=(20, 10))
+
+        frame = tk.Frame(confirm_win, bg="#fff8f0")
+        frame.pack(fill="both", expand=True, padx=25, pady=10)
+
+    # Hiển thị tóm tắt phiếu
         for pos, uid in result.items():
-            name = name_map.get(uid, "Không rõ")
-            summary_text += f"• {pos}: {name}\n"
+            name = name_map.get(uid, f"Ứng viên {uid}")
+            row = tk.Frame(frame, bg="#fff8f0")
+            row.pack(anchor="w", pady=3, fill="x")
+            tk.Label(row, text=f"• {pos}:", font=("Segoe UI", 12, "bold"),
+                 bg="#fff8f0", fg="#5b3215").pack(side="left")
+            tk.Label(row, text=name, font=("Segoe UI", 12),
+                 bg="#fff8f0", fg="#111827").pack(side="left", padx=5)
 
-        confirm = messagebox.askyesno(
-            "Xác nhận bỏ phiếu",
-            summary_text + "\n\nBạn có chắc muốn gửi phiếu bầu này không?"
-        )
-        if not confirm:
-            messagebox.showinfo("Đã hủy", "Bạn có thể xem lại lựa chọn của mình trước khi gửi.")
-            return
+    # ===== Hai nút hành động =====
+        btn_frame = tk.Frame(confirm_win, bg="#fff8f0")
+        btn_frame.pack(pady=20)
 
-        phieu_raw_path = DATA_DIR / "phieu_bau_raw.csv"
-        phieu_sach_path = DATA_DIR / "phieu_bau_sach.csv"
+        def confirm_send():
+            phieu_raw_path = DATA_DIR / "phieu_bau_raw.csv"
+            phieu_sach_path = DATA_DIR / "phieu_bau_sach.csv"
 
-        existing = read_csv(phieu_raw_path)
-        next_id = len(existing) + 1
-        ma_phieu_base = f"PB{next_id:03d}"
-        now = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+            existing = read_csv(phieu_raw_path)
+            next_id = len(existing) + 1
+            ma_phieu_base = f"PB{next_id:03d}"
+            now = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
 
-        for idx, (pos, uid) in enumerate(result.items(), start=1):
-            ma_phieu = f"{ma_phieu_base}_{idx:02d}"
-            row = {
-                "Mã phiếu": ma_phieu,
-                "Mã cuộc bầu": ma_cuoc_bau,
-                "Mã cử tri": voter_id,
-                "Mã ứng viên": uid,
-                "Thời điểm bỏ phiếu": now,
-                "Hợp lệ": "True"
-            }
-            append_csv(phieu_raw_path, row, row.keys())
-            append_csv(phieu_sach_path, row, row.keys())
+            for idx, (pos, uid) in enumerate(result.items(), start=1):
+                ma_phieu = f"{ma_phieu_base}_{idx:02d}"
+                row = {
+                    "Mã phiếu": ma_phieu,
+                    "Mã cuộc bầu": ma_cuoc_bau,
+                    "Mã cử tri": voter_id,
+                    "Mã ứng viên": uid,
+                    "Thời điểm bỏ phiếu": now,
+                    "Hợp lệ": "True"
+                }
+                append_csv(phieu_raw_path, row, row.keys())
+                append_csv(phieu_sach_path, row, row.keys())
 
-        messagebox.showinfo("Gửi phiếu thành công ✅", "Phiếu của bạn đã được ghi nhận vào hệ thống!")
-        win.destroy()
-        parent.deiconify()
+            confirm_win.destroy()
+            messagebox.showinfo("Gửi phiếu thành công ✅", "Phiếu của bạn đã được ghi nhận vào hệ thống!")
+            win.destroy()
+            parent.deiconify()
+
+        tk.Button(btn_frame, text="✅ Xác nhận gửi", bg="#2563eb", fg="white",
+              font=("Segoe UI", 11, "bold"), relief="flat", padx=15, pady=6,
+              activebackground="#1d4ed8", cursor="hand2",
+              command=confirm_send).pack(side="left", padx=10)
+
+        tk.Button(btn_frame, text="🔙 Quay lại", bg="#9ca3af", fg="white",
+              font=("Segoe UI", 11, "bold"), relief="flat", padx=15, pady=6,
+              activebackground="#6b7280", cursor="hand2",
+              command=confirm_win.destroy).pack(side="left", padx=10)
+
 
     tk.Button(bottom, text="ĐÓNG", bg=BTN_GRAY, fg="white",
               font=("Segoe UI", 11, "bold"), width=10, relief="flat",
